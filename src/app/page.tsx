@@ -27,7 +27,7 @@ interface Product {
   image: string;
   stock: number;
   status: 'In Stock' | 'Low Stock' | 'Out of Stock';
-  storePrices: StorePrices;
+  priceObservations: any[]; // accepts the raw array directly
 }
 
 interface CartItem extends Product {
@@ -38,6 +38,23 @@ interface CartItem extends Product {
 
 export default function KavyoGroceryApp() {
   const router = useRouter();
+
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+
+  useEffect(() => 
+    {fetch('http://localhost:3000/basket')
+      .then((res) => res.json())
+      .then((data) => {
+        setProducts(data);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Failed to fetch from backend:", err);
+        setLoading(false);
+      });
+  }, []);
+
 
   const [role, setRole] = useState<UserRole>('USER');
   const [showUserLoginModal, setShowUserLoginModal] = useState<boolean>(false);
@@ -118,7 +135,7 @@ export default function KavyoGroceryApp() {
     }
   ];
 
-  const [products, setProducts] = useState<Product[]>(defaultProducts);
+  // const [products, setProducts] = useState<Product[]>(defaultProducts);
 
   const loadSyncedProducts = () => {
     const savedProducts = localStorage.getItem('kavyo_store_products');
@@ -210,8 +227,9 @@ export default function KavyoGroceryApp() {
   };
 
   const cartSubtotal = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+  const filteredProducts = (Array.isArray(products) ? products : []).filter((p) => {
+  // const filteredProducts = products.filter((p) => {
 
-  const filteredProducts = products.filter((p) => {
     const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCat = selectedCategory === 'All' || p.category === selectedCategory;
     return matchesSearch && matchesCat;
